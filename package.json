@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "voice-chat",
   "private": true,
   "scripts": {
     "build": "turbo run build",
