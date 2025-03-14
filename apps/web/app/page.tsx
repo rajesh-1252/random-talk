@@ -83,7 +83,7 @@ export default function Home() {
           Examples
         </a>
         <a
-          href="https://turbo.build?utm_source=create-turbo"
+          href="http://localhost:8000/auth/google"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "esModuleInterop": true,
+    "target": "ESNext", // Add this line to support private fields
+    "moduleResolution": "node",
+    "skipLibCheck": true // Add this to skip type checking of node_modules
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

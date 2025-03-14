@@ -1,0 +1,16 @@
+{
+  "name": "user",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon --ext ts,tsx --exec tsx src/index.ts"
+  },
+  "devDependencies": {
+    "@repo/mongoose": "*",
+    "@repo/errors": "*",
+    "@repo/middleware": "*",
+    "@repo/shared-types": "*",
+    "@repo/helper": "*"
+  }
+}
