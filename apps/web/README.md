@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+1. webrtc
 
-## Getting Started
+// when clicked on call icon
 
-First, run the development server:
+- step 1 : (web1) - done
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. create peer connection
+2. setup ice-candidate
+   1. send to server type="ice-candidate"
+3. setup ontrack and set remotevideoref
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- step 2: (web1)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. getLocalVideoStream -done
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
+   1. getdisplayuser
+   2. peer.addTrack()
 
-## Learn More
+5. create offer (web1) -done
 
-To learn more about Next.js, take a look at the following resources:
+   1. create offer()
+   2. setlocalDescription (offer)
+   3. send the offer to signaling server type="call-user" to='to userid'
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+6. in signaling server (server) -done
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   1. receive type='call-user'
+   2. send the signal to the to user id with the offer and from userid {offer , from, type = "incoming-call"}
 
-## Deploy on Vercel
+7. in the to user browser (web2) -done
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   1. listen for type = "incoming-call"
+   2. handle the call.
+      1. set ringing true
+      1. setup peer connection
+      1. set offer to the the remote description
+      1. getLocalVideoStream
+      1. create answer
+         1. create answer
+         2. set as answer as local description
+         3. signal to server (type : "answer-user", answer)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+8. in signaling server (sever) -done
+
+   1. receive type='answer-user'
+   2. send to user (web1) {type : 'answer-received', answer, from}
+
+9. in user (web1) -done
+
+   1. listen for type = "answer-received"
+   2. set the corresoonding state
+   3. set the answer as a remotedescription
+
+10. on browser web1 and web2
+
+    1. on type = ice-candidate, candidate
+    2. await peer.addIceCandidate(new RTCIceCandidate(candidate));

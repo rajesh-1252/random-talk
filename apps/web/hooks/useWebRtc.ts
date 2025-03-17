@@ -46,7 +46,6 @@ export const useWebRtc = (ws: RefObject<WebSocket | null>) => {
   const handleIncomingCall = async (
     offer: RTCSessionDescriptionInit,
     from: string,
-    to: string,
   ) => {
     await setupPeerConnection(from);
     const peer = peerConnectionRef.current;

@@ -20,6 +20,7 @@ wss.on("connection", (ws, req) => {
   console.log("connected to the web socket server");
   const token = req.url?.split("token=")[1];
   const userId = verifyToken(token);
+  console.log(`user connected ${userId}`);
   if (!userId) {
     ws.close();
     return;
@@ -32,7 +33,7 @@ wss.on("connection", (ws, req) => {
     switch (data.type) {
       case "call-user": {
         const { to, offer } = data || {};
-        console.log("call to user", to);
+        // console.log("call to user", to);
         const toUserSocket = onlineUser.get(to);
         toUserSocket?.send(
           JSON.stringify({ type: "incoming-call", from: userId, offer, to }),
@@ -44,9 +45,9 @@ wss.on("connection", (ws, req) => {
         const { answer, to } = data || {};
         const toUserSocket = onlineUser.get(to);
         toUserSocket?.send(
-          JSON.stringify({ type: "answer-received", from: userId, answer }),
+          JSON.stringify({ type: "call-accepted", from: userId, answer }),
         );
-        console.log("answer-user  called", data);
+        // console.log("answer-user  called", data);
         break;
       }
       case "ice-candidate": {
@@ -61,7 +62,6 @@ wss.on("connection", (ws, req) => {
       default:
         console.log("Unknown message type", data.type);
     }
-    console.log("recieved message", data);
   });
   ws.on("close", () => {
     if (userId) {

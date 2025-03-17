@@ -20,7 +20,7 @@ const Page = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  const findCaller = () => {};
+  const findCaller = () => { };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -86,7 +86,7 @@ const Page = () => {
     ws?.send(JSON.stringify({ type: "offer", offer }));
   };
 
-  const sendAnswerToCaller = (answer: RTCSessionDescriptionInit) => {};
+  const sendAnswerToCaller = (answer: RTCSessionDescriptionInit) => { };
 
   const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
     const peer = peerConnectionRef.current!;
