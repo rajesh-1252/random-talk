@@ -1,6 +1,5 @@
 import React from "react";
 import VideoCallPage from "./VideoCall";
-
 interface VideoCallPageProps {
   params: { callerId: string };
 }

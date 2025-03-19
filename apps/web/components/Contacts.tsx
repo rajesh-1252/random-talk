@@ -4,16 +4,23 @@ import { PhoneCall, Search, Star, UserPlus } from "lucide-react";
 import { getUserContacts } from "../api/userService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/types/user";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface ContactsType {
   callFav: (userId: string) => void;
 }
 
-const Contacts = ({ callFav }: ContactsType) => {
+const Contacts = () => {
   const [contacts, setContacts] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
+
+  const router = useRouter();
+  const handleCall = (callerId: string) => {
+    router.push(`/call/ringing/${callerId}`);
+  };
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -64,12 +71,13 @@ const Contacts = ({ callFav }: ContactsType) => {
     <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-xl border border-gray-200">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Contacts</h2>
-        <button
+        <Link
+          href="/recentCalls"
           className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
           title="Add new contact"
         >
           <UserPlus size={20} />
-        </button>
+        </Link>
       </div>
 
       {/* Search and filter */}
@@ -135,7 +143,7 @@ const Contacts = ({ callFav }: ContactsType) => {
                   </div>
                 </div>
                 <button
-                  onClick={() => callFav(user._id)}
+                  onClick={() => handleCall(user._id)}
                   className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 transition shadow-md hover:shadow-lg"
                   title="Call"
                 >

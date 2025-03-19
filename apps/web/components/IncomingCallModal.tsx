@@ -1,11 +1,10 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState, store } from "@/store/store";
-import { Phone, X, Phone as PhoneIcon } from "lucide-react";
+import { RootState } from "@/store/store";
+import { Phone, X } from "lucide-react";
 import Image from "next/image";
-import { WebRTCService } from "@/service/webrtcService";
 import { useRouter } from "next/navigation";
-import { incomingCallAccepted } from "@/store/features/call/callSlice";
+import { incomingCallRejected } from "@/store/features/call/callSlice";
 
 // Action types
 
@@ -19,30 +18,29 @@ interface CallInfoProps {
 const IncomingCallModal: React.FC<CallInfoProps> = ({
   caller = { name: "Unknown" },
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-
-  const webrtcService = new WebRTCService({
-    dispatch,
-    getState: () => ({ webRtc: store.getState().webRtc }),
-  });
-
+  const dispatch = useDispatch();
   const offer = useSelector((state: RootState) => state.webRtc.incomingCall);
-
   const handleAcceptCall = async () => {
     if (!offer?.offer && !offer?.from) return;
-    await webrtcService.acceptCall(offer.offer, offer?.from);
-    dispatch(incomingCallAccepted());
-    router.push(`/call/${offer.from}`);
+    router.push(`/call/onCall/${offer.from}?new=true`);
   };
 
   const handleRejectCall = () => {
-    console.log("rejected");
+    if (!offer?.from) return;
+    dispatch(incomingCallRejected());
+    dispatch({
+      type: "websocket/send",
+      payload: {
+        type: "reject-call",
+        to: offer?.from,
+      },
+    });
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-80 max-w-md animate-bounce">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-80 max-w-md ">
         <div className="flex flex-col items-center mb-6">
           {caller.avatar ? (
             <Image

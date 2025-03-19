@@ -41,7 +41,7 @@ wss.on("connection", (ws, req) => {
         break;
       }
 
-      case "answer-user": {
+      case "answer-call": {
         const { answer, to } = data || {};
         const toUserSocket = onlineUser.get(to);
         toUserSocket?.send(
@@ -59,6 +59,22 @@ wss.on("connection", (ws, req) => {
         );
         break;
       }
+      case "reject-call": {
+        const { to } = data;
+        const toUserSocket = onlineUser.get(to);
+        toUserSocket?.send(
+          JSON.stringify({ type: "receiver-disconnected" }),
+        );
+        break
+      }
+      case "end-call": {
+        const { to } = data;
+        const toUserSocket = onlineUser.get(to);
+        toUserSocket?.send(
+          JSON.stringify({ type: "call-ended" }),
+        );
+      }
+
       default:
         console.log("Unknown message type", data.type);
     }

@@ -1,6 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+enum callStatus {
+  Ringing = "Ringing",
+  CallRejected = "CallRejected ",
+  Busy = "",
+  CallDisconnected = "CallDisconnected ",
+  OnCall = "OnCall",
+  NotOnCall = "NotOnCall",
+}
+
 export interface CallState {
+  callStatus: callStatus;
   inCall: boolean;
   incomingCall: {
     from: string;
@@ -14,6 +24,8 @@ export interface CallState {
   isMuted: boolean;
   isVideoOff: boolean;
   caller: { name: string; avatar: string };
+  callRejected: boolean;
+  callDisconnected: boolean;
 }
 
 const initialState: CallState = {
@@ -27,15 +39,30 @@ const initialState: CallState = {
   isMuted: false,
   isVideoOff: false,
   caller: { name: "", avatar: "" },
+  callRejected: false,
+  callDisconnected: false,
+  callStatus: callStatus.NotOnCall,
 };
 
 const callSlice = createSlice({
   name: "call",
   initialState,
   reducers: {
-    callStarted: (state, action: PayloadAction<string>) => {
-      state.inCall = true;
-      state.currentCallId = action.payload;
+    callStarted: (
+      state,
+      action: PayloadAction<{
+        currentCallId: string;
+        peerConnection: RTCPeerConnection;
+      }>,
+    ) => {
+      state.callDisconnected = false;
+      state.currentCallId = action.payload.currentCallId;
+      state.peerConnection = action.payload.peerConnection;
+      state.callRejected = false;
+      state.callStatus = callStatus.Ringing;
+    },
+    changeCallDisconnected: (state, action) => {
+      state.callDisconnected = action.payload;
     },
     callEnded: (state) => {
       state.inCall = false;
@@ -44,24 +71,33 @@ const callSlice = createSlice({
       state.peerConnection = null;
       state.localStream = null;
       state.remoteStream = null;
+      state.callRejected = false;
+      state.callDisconnected = true;
+      state.callStatus = callStatus.CallDisconnected;
     },
     incomingCallReceived: (
       state,
-      action: PayloadAction<{ from: string; offer: any }>,
+      action: PayloadAction<{
+        from: string;
+        offer: RTCSessionDescriptionInit;
+      }>,
     ) => {
       state.incomingCall = action.payload;
       state.ringing = true;
     },
-    incomingCallAccepted: (state, action) => {
-      console.log("incoming call accepted", state.incomingCall);
-      if (state.incomingCall) {
-        state.inCall = true;
-        state.currentCallId = state.incomingCall.from;
-        state.incomingCall = null;
-        state.ringing = false;
-        state.peerConnection?.setRemoteDescription(
-          new RTCSessionDescription(action.payload),
-        );
+    incomingCallAccepted: (
+      state,
+      action: PayloadAction<{
+        currentCallId: string;
+        peerConnection?: RTCPeerConnection;
+      }>,
+    ) => {
+      state.inCall = true;
+      state.ringing = false;
+      state.currentCallId = action.payload.currentCallId;
+      state.callStatus = callStatus.OnCall;
+      if (action.payload.peerConnection) {
+        state.peerConnection = action.payload.peerConnection;
       }
     },
     setupIceCandidate: (state, action) => {
@@ -73,18 +109,18 @@ const callSlice = createSlice({
       }
       peer.addIceCandidate(new RTCIceCandidate(candidate));
     },
-    answerReceived: (state, action) => {
-      if (!state.peerConnection) {
-        console.log("no peerconnection ");
-        return;
-      }
-      state.peerConnection.setRemoteDescription(
-        new RTCSessionDescription(action.payload.answer),
-      );
-    },
 
     incomingCallRejected: (state) => {
       state.incomingCall = null;
+      state.ringing = false;
+      state.callStatus = callStatus.NotOnCall;
+    },
+
+    outGoingCallRejected: (state) => {
+      state.incomingCall = null;
+      state.ringing = false;
+      state.callRejected = true;
+      state.callStatus = callStatus.CallRejected;
     },
     setLocalStream: (state, action: PayloadAction<MediaStream | null>) => {
       state.localStream = action.payload;
@@ -118,6 +154,7 @@ export const {
   setRemoteStream,
   toggleMute,
   toggleVideo,
+  changeCallDisconnected,
 } = callSlice.actions;
 
 export default callSlice.reducer;

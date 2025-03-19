@@ -1,10 +1,13 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import Video from "@/components/Video";
 
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState, store } from "@/store/store";
 import React, { useEffect, useRef } from "react";
-import { WebRTCService } from "@/service/webrtcService";
+import webRTCService from "@/service/webrtcService";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { incomingCallAccepted } from "@/store/features/call/callSlice";
 interface VideoCallPageProps {
   callerId: string;
 }
@@ -12,35 +15,36 @@ interface VideoCallPageProps {
 const VideoCallPage = ({ callerId }: VideoCallPageProps) => {
   const dispatch = useDispatch<AppDispatch>();
   // const router = useRouter();
-  const localStream = useSelector(
-    (state: RootState) => state.webRtc.localStream,
-  );
-  const remoteStream = useSelector(
-    (state: RootState) => state.webRtc.remoteStream,
-  );
+  const searchParams = useSearchParams();
+  const isNew = searchParams.get("new");
+  const router = useRouter();
 
-  const webRtc = new WebRTCService({
-    dispatch,
-    getState: () => ({ webRtc: store.getState().webRtc }),
-  });
-  const { startCall, endCall } = webRtc;
+  const {
+    localStream,
+    remoteStream,
+    callDisconnected,
+    incomingCall,
+    peerConnection,
+  } = useSelector((state: RootState) => state.webRtc);
 
+  const { endCall, acceptCall } = webRTCService;
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
-  const initializeCall = async () => {
-    try {
-      const peerConnection = await startCall(callerId);
-      peerConnectionRef.current = peerConnection;
-    } catch (error) {
-      console.log("Failed to initialize call", error);
-
-      // router.push("/");
-    }
+  const fdsa = async () => {
+    if (!incomingCall?.offer && !incomingCall?.from) return;
+    await acceptCall(incomingCall.offer, incomingCall?.from);
+    dispatch(incomingCallAccepted());
+    await peerConnection?.setRemoteDescription(
+      new RTCSessionDescription(incomingCall.offer),
+    );
   };
   useEffect(() => {
-    initializeCall();
+    if (!isNew) {
+      console.log("");
+    } else {
+      fdsa();
+    }
     return () => {
       endCall();
     };
@@ -58,9 +62,16 @@ const VideoCallPage = ({ callerId }: VideoCallPageProps) => {
     }
   }, [remoteStream]);
 
+  useEffect(() => {
+    console.log({ callDisconnected });
+    if (callDisconnected) {
+      router.replace(`/call/ringing/${callerId}?disconnected=${true}`);
+    }
+  }, [callDisconnected]);
+
   const stopCall = () => {
     endCall();
-    // router.push("/");
+    router.push("/");
   };
 
   return (

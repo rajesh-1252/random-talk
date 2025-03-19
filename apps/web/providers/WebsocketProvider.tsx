@@ -1,5 +1,4 @@
 import IncomingCallModal from "@/components/IncomingCallModal";
-import { WebRTCService } from "@/service/webrtcService";
 import { AppDispatch, RootState, store } from "@/store/store";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,7 +8,7 @@ const WEBSOCKET_DISCONNECT = "websocket/disconnect";
 
 const WebsocketProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const incomingCall = useSelector((state: RootState) => state.webRtc.ringing);
+  const { ringing } = useSelector((state: RootState) => state.webRtc);
   const callerInfo = useSelector((state: RootState) => state.webRtc.caller);
 
   useEffect(() => {
@@ -31,7 +30,7 @@ const WebsocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      {incomingCall && <IncomingCallModal caller={callerInfo} />}
+      {ringing && <IncomingCallModal caller={callerInfo} />}
       {children}
     </>
   );

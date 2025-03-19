@@ -9,8 +9,10 @@ import {
   wsMessageReceived,
 } from "./webSocketSlice";
 import {
+  callEnded,
   incomingCallAccepted,
   incomingCallReceived,
+  incomingCallRejected,
   setupIceCandidate,
 } from "../call/callSlice";
 
@@ -36,7 +38,7 @@ let socket: WebSocket | null = null;
 
 export const webSocketMiddleware: Middleware<object, RootState, Dispatch> =
   (api) => (next: any) => (action: any) => {
-    const { dispatch } = api;
+    const { dispatch, getState } = api;
     console.log("action.type", action.type);
     if (action.type === "websocket/connect") {
       console.log(action.type, "inside middleware");
@@ -63,12 +65,29 @@ export const webSocketMiddleware: Middleware<object, RootState, Dispatch> =
         console.log("web socket message received", message);
         dispatch(wsMessageReceived(message));
         if (message.type === "incoming-call") {
-          console.log("incomingCallReceived called");
           dispatch(incomingCallReceived(message));
         } else if (message.type === "call-accepted") {
-          dispatch(incomingCallAccepted(message.answer));
+          const peer = getState().webRtc.peerConnection;
+          console.log("call-accepted called", message.answer, peer);
+          if (peer) {
+            peer.setRemoteDescription(
+              new RTCSessionDescription(message.answer),
+            );
+            console.log("sucess", action.payload.answer);
+            dispatch(
+              incomingCallAccepted({
+                currentCallId: message.from,
+              }),
+            );
+          } else {
+            console.warn("no peer", peer);
+          }
         } else if (message.type === "ice-candidate") {
           dispatch(setupIceCandidate(message));
+        } else if (message.type === "receiver-disconnected") {
+          dispatch(callEnded());
+        } else if (message.type === "call-ended") {
+          dispatch(callEnded());
         }
       };
 
