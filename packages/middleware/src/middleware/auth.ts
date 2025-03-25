@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { Request, Response, NextFunction } from "express";
-import { UserModal } from "@repo/mongoose"; // Adjust the path as needed
+import { IUser, UserModel } from "@repo/mongoose"; // Adjust the path as needed
 import { UnAuthenticatedError } from "@repo/errors";
 dotenv.config();
 
@@ -29,16 +29,19 @@ export const auth = async (
       userId: string;
     };
 
-    const userDetails = await UserModal.findById(decoded.userId).select(
+    const userDetails = (await UserModel.findById(decoded.userId).select(
       "-password",
-    );
+    )) as IUser | null;
     console.log({ userDetails });
 
     if (!userDetails) {
       throw new UnAuthenticatedError("User not found");
     }
 
-    req.userDetails = { ...userDetails, _id: userDetails._id as string };
+    req.userDetails = {
+      ...userDetails.toObject(),
+      _id: userDetails._id,
+    };
     next();
   } catch (error: any) {
     if (error.name === "TokenExpiredError") {

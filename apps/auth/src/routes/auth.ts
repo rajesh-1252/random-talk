@@ -12,7 +12,10 @@ AuthRouter.get(
 
 AuthRouter.get(
   "/google/callback",
-  passport.authenticate("google", { session: false }),
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
   googleCallback,
 );
 

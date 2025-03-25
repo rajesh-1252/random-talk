@@ -1,0 +1,10 @@
+# Config file for Air (Live Reloading)
+root = "."
+tmp_dir = "tmp"
+build = "go build -o ./tmp/main ."
+cmd = "./tmp/main"
+
+[watcher]
+dirs = ["."]
+extensions = ["go"]
+exclude_dirs = ["tmp", "vendor"]

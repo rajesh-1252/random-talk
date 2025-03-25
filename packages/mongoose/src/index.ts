@@ -1,4 +1,15 @@
 import { connectDB } from "./db/connect";
-import { UserModal, IUser } from "./models/user";
+import { UserModel } from "./models/user";
+import { ConversationModel, IConversation } from "./models/conversation";
+import { MessageModel, IMessage } from "./models/message";
 
-export { connectDB, UserModal, IUser };
+import type { IUser } from "@repo/shared-types";
+export {
+  connectDB,
+  UserModel,
+  IUser,
+  MessageModel,
+  IMessage,
+  ConversationModel,
+  IConversation,
+};

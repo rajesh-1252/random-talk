@@ -1,19 +1,14 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Search,
-  Archive,
-  Lock,
-  MoreVertical,
-  Plus,
-  Phone,
-  Video,
-} from "lucide-react";
+import { Search, Archive, Lock, MoreVertical, Plus } from "lucide-react";
+import ChatPreview from "@/components/chat/ChatPreview";
+import { useGetConversation } from "@/features/chat/queries";
+import ChatLoadingScreen from "@/components/chat/ChatLoading";
 
 const ChatApp = () => {
   const [activeTab, setActiveTab] = useState("All");
+  const { data, isLoading, isError } = useGetConversation()
 
-  // Sample chat data
   const chats = [
     {
       id: 1,
@@ -69,7 +64,14 @@ const ChatApp = () => {
     },
   ];
 
+
   const tabs = ["All", "Unread", "Favorites", "Groups"];
+
+  if (isLoading) return <ChatLoadingScreen />
+  if (isError) return <p> Error</p>
+
+  const conversations = data?.result.conversations
+  console.log({ conversations })
 
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
@@ -99,11 +101,10 @@ const ChatApp = () => {
         {tabs.map((tab) => (
           <button
             key={tab}
-            className={`px-4 py-1 rounded-full text-sm ${
-              activeTab === tab
-                ? "bg-teal-600 text-white"
-                : "bg-gray-700 text-gray-300"
-            }`}
+            className={`px-4 py-1 rounded-full text-sm ${activeTab === tab
+              ? "bg-teal-600 text-white"
+              : "bg-gray-700 text-gray-300"
+              }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
@@ -131,59 +132,9 @@ const ChatApp = () => {
 
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto">
-        {chats.map((chat) => (
-          <div
-            key={chat.id}
-            className="flex items-center p-3 border-b border-gray-700 hover:bg-gray-800"
-          >
-            <div className="relative mr-3">
-              <img
-                src={chat.avatar}
-                alt={chat.name}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              {chat.isOfficial && (
-                <div className="absolute bottom-0 right-0 bg-teal-500 p-1 rounded-full">
-                  <span className="text-xs">✓</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1">
-              <div className="flex justify-between">
-                <h3 className="font-semibold">{chat.name}</h3>
-                <span className="text-xs text-gray-400">{chat.time}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-400 truncate pr-2 max-w-xs">
-                  {chat.lastMessage}
-                </p>
-                {chat.unread > 0 && (
-                  <span className="bg-teal-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {chat.unread}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+        {conversations?.map((converstation) => (
+          <ChatPreview key={converstation.id} {...converstation} />
         ))}
-      </div>
-
-      {/* Bottom navigation */}
-      <div className="flex justify-around items-center py-3 bg-gray-800 border-t border-gray-700">
-        <div className="flex flex-col items-center">
-          <div className="w-6 h-6 bg-teal-500 rounded-full"></div>
-          <span className="text-xs mt-1 text-teal-500">Chats</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <Phone className="w-6 h-6 text-gray-400" />
-          <span className="text-xs mt-1 text-gray-400">Calls</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <Video className="w-6 h-6 text-gray-400" />
-          <span className="text-xs mt-1 text-gray-400">Status</span>
-        </div>
       </div>
     </div>
   );

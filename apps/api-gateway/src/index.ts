@@ -1,4 +1,5 @@
 import express, { Request, Response, Application } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import proxy from "express-http-proxy";
 import dotenv from "dotenv";
 import morgan from "morgan";
@@ -20,12 +21,14 @@ const {
   CHATURL = "",
   SIGNALINGURL = "",
   USERURL = "",
+  MATCHINGURL = "",
+  SECRETCHAT = "",
 } = process.env;
 console.log({ AUTHURL, USERURL });
-
 app.use("/auth", proxy(AUTHURL));
 app.use("/chat", proxy(CHATURL));
 app.use("/signal", proxy(SIGNALINGURL));
 app.use("/user", proxy(USERURL));
-
+app.use("/matching", proxy(MATCHINGURL));
+app.use("/secretChat", proxy(SECRETCHAT));
 app.listen(8000, () => console.log("API Gateway running on port 8000"));

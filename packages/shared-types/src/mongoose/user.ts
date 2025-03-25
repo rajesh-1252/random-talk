@@ -1,10 +1,22 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  googleId?: string; // Optional for Google OAuth
-  friends: [];
+  profilePicture?: string;
+  bio?: string;
+  phone?: string;
+  googleId?: string;
+  friends: Types.ObjectId[] | IUser[];
+  blockedUsers?: Types.ObjectId[] | IUser[];
   rating: number;
+  status?: "online" | "offline" | "away" | "busy";
+  lastSeen?: Date;
+  device?: {
+    platform?: string;
+    token?: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }

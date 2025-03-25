@@ -1,0 +1,9 @@
+{
+  "name": "secret-chat-signal",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "air",
+    "build": "go build -o secret-chat-service main.go",
+    "start": "./secret-chat-service"
+  }
+}

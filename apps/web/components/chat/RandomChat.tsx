@@ -19,66 +19,86 @@ type User = {
 
 export default function RandomChat() {
   const [searchingStatus, setSearchingStatus] = useState<
-    "idle" | "searching" | "matched"
+    "idle" | "searching" | "matched" | "timeout"
   >("idle");
   const [matchedUser, setMatchedUser] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const startSearch = () => {
     setSearchingStatus("searching");
-
-    const randomTime = Math.floor(Math.random() * 2000) + 2000;
-    setTimeout(() => {
-      const randomNames = [
-        "Alex Thompson",
-        "Jamie Rivera",
-        "Sam Wilson",
-        "Taylor Smith",
-        "Jordan Lee",
-        "Casey Jones",
-        "Morgan Davis",
-        "Riley Johnson",
-        "Quinn Miller",
-      ];
-      const randomName =
-        randomNames[Math.floor(Math.random() * randomNames.length)];
-      setMatchedUser({
-        name: randomName,
-        avatar: `/api/placeholder/40/40?text=${randomName.charAt(0)}`,
-        online: true,
-      });
-      setSearchingStatus("matched");
-    }, randomTime);
+    setError(null);
+    // Your matching logic will go here
   };
 
-  const cancelSearch = () => setSearchingStatus("idle");
+  const cancelSearch = () => {
+    setSearchingStatus("idle");
+    setError(null);
+  };
 
   const startChat = () => {
     alert(`Starting chat with ${matchedUser?.name}`);
   };
 
-  const talkWithFavUser = () => {
-    alert("Talking with your favorite user!");
-  };
-
   const resetSearch = () => {
     setSearchingStatus("idle");
     setMatchedUser(null);
+    setError(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden">
-        <Header />
+        <div className="bg-indigo-600 p-6 text-white">
+          <h1 className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+            <Users className="w-6 h-6" />
+            Random Chat
+          </h1>
+          <p className="text-center text-indigo-100 mt-2">
+            Connect with someone new
+          </p>
+        </div>
+
         <div className="p-6">
           {searchingStatus === "idle" && (
-            <IdleState
-              startSearch={startSearch}
-              talkWithFavUser={talkWithFavUser}
-            />
+            <div className="text-center">
+              <div className="bg-indigo-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <UserSearch className="w-12 h-12 text-indigo-600" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">
+                Find a random chat partner
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Click the button below to be matched with a random user to start
+                chatting.
+              </p>
+              <button
+                onClick={startSearch}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+              >
+                <Users className="w-5 h-5" />
+                Find Random User
+              </button>
+            </div>
           )}
+
           {searchingStatus === "searching" && (
-            <SearchingState cancelSearch={cancelSearch} />
+            <div className="text-center">
+              <div className="animate-spin w-16 h-16 mx-auto mb-6">
+                <Loader2 className="w-16 h-16 text-indigo-600" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Finding a match...</h2>
+              <p className="text-gray-600 mb-6">
+                Please wait while we find someone for you to chat with.
+              </p>
+              <button
+                onClick={cancelSearch}
+                className="text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              >
+                Cancel Search
+              </button>
+            </div>
           )}
+
           {searchingStatus === "matched" && matchedUser && (
             <MatchedState
               user={matchedUser}
@@ -86,72 +106,29 @@ export default function RandomChat() {
               resetSearch={resetSearch}
             />
           )}
+
+          {searchingStatus === "timeout" && (
+            <div className="text-center">
+              <div className="mb-6">
+                <X className="w-16 h-16 text-red-500 mx-auto" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">No Match Found</h2>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={resetSearch}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+              >
+                <UserSearch className="w-5 h-5" />
+                Try Again
+              </button>
+            </div>
+          )}
         </div>
         <Footer searchingStatus={searchingStatus} />
       </div>
     </div>
   );
 }
-
-const Header = () => (
-  <div className="bg-indigo-600 p-6 text-white">
-    <h1 className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-      <Users className="w-6 h-6" />
-      Random Chat
-    </h1>
-    <p className="text-center text-indigo-100 mt-2">Connect with someone new</p>
-  </div>
-);
-
-const IdleState = ({
-  startSearch,
-  talkWithFavUser,
-}: {
-  startSearch: () => void;
-  talkWithFavUser: () => void;
-}) => (
-  <div className="text-center">
-    <div className="bg-indigo-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-      <UserSearch className="w-12 h-12 text-indigo-600" />
-    </div>
-    <h2 className="text-xl font-semibold mb-2">Find a random chat partner</h2>
-    <p className="text-gray-600 mb-6">
-      Click the button below to be matched with a random user to start chatting.
-    </p>
-    <button
-      onClick={startSearch}
-      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors mb-3"
-    >
-      <Users className="w-5 h-5" />
-      Find Random User
-    </button>
-
-    <Link
-      href="/chat"
-      className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
-    >
-      <Star className="w-5 h-5" />
-      Talk with Favorite User
-    </Link>
-  </div>
-);
-
-const SearchingState = ({ cancelSearch }: { cancelSearch: () => void }) => (
-  <div className="text-center py-8">
-    <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mx-auto mb-6" />
-    <h2 className="text-xl font-semibold mb-2">Searching for a match...</h2>
-    <p className="text-gray-600 mb-6">
-      Please wait while we find someone for you to chat with.
-    </p>
-    <button
-      onClick={cancelSearch}
-      className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 mx-auto transition-colors"
-    >
-      <X className="w-4 h-4" />
-      Cancel
-    </button>
-  </div>
-);
 
 const MatchedState = ({
   user,
@@ -204,7 +181,7 @@ const MatchedState = ({
 const Footer = ({
   searchingStatus,
 }: {
-  searchingStatus: "idle" | "searching" | "matched";
+  searchingStatus: "idle" | "searching" | "matched" | "timeout";
 }) => (
   <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
     <p className="text-center text-gray-500 text-sm">
@@ -212,6 +189,7 @@ const Footer = ({
       {searchingStatus === "searching" && "Looking for someone to chat with..."}
       {searchingStatus === "matched" &&
         "You found a match! Start chatting or find someone else."}
+      {searchingStatus === "timeout" && "No match found within 60 seconds."}
     </p>
   </div>
 );
