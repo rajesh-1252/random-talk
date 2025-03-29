@@ -1,4 +1,4 @@
-import RandomChat from "@/components/chat/RandomChat";
+import RandomChat from "@/components/matching/RandomChat";
 
 export default function Home() {
   return (

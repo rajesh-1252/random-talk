@@ -38,6 +38,7 @@ func FindMatch(userID string, rating int) (string, error) {
 
 	for {
 		select {
+		// <-ch we are receiving from the channel
 		case <-ctx.Done():
 			// Remove user from queue if timeout occurs
 			db.RedisClient.ZRem(context.Background(), "matchmaking_queue", userID)
@@ -48,7 +49,6 @@ func FindMatch(userID string, rating int) (string, error) {
 				Max:   strconv.Itoa(maxRating),
 				Count: 10,
 			}).Result()
-
 			if err != nil {
 				log.Printf("Error finding matches: %v", err)
 				continue
