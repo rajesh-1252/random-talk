@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
+	db.ConnectDB()
 	config.LoadEnv()
 	db.InitRedis()
 	db.InitKafka()
-
 	// go matchmaker.StartConsumer()
 	api.StartServer()
 	fmt.Println(" Matching Service is running...")

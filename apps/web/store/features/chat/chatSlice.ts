@@ -1,5 +1,7 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import axiosInstance from "@/api/axiosInstance";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL;
 export interface UserConversation {
   _id: string;
   participants: {
@@ -31,7 +33,6 @@ export interface ChatState {
   currentUser: UserConversation | null;
   users: UserConversation[];
   messages: Message[];
-  currentUse: UserConversation | null;
 }
 
 const initialState: ChatState = {
@@ -40,6 +41,21 @@ const initialState: ChatState = {
   messages: [],
   currentUse: null,
 };
+
+export const startChat = createAsyncThunk<UserConversation, void>(
+  "matching/startChat",
+  async (matchId, { rejectWithValue }) => {
+    console.log("matching/startCha clicked t", matchId)
+    try {
+      const response = await axiosInstance.get<UserConversation>(`${API_URL}/matching/api/conversation/?matchId=${matchId}`);
+      console.log('runnning', response.data)
+      return response.data;
+    } catch (error: any) {
+      console.log(error)
+      return rejectWithValue(error.response?.data?.message || "Failed to cancel match");
+    }
+  }
+);
 
 const chatSlice = createSlice({
   name: "chat",
@@ -84,6 +100,13 @@ const chatSlice = createSlice({
       if (message) message.isDelivered = true;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(startChat.fulfilled, (state, action: PayloadAction<UserConversation>) => {
+        state.currentUser = action.payload.result;
+      })
+  }
+
 });
 
 export const {

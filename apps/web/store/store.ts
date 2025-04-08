@@ -8,7 +8,7 @@ import webRtcReducer, { CallState } from "./features/call/callSlice";
 import chatReducer, { ChatState } from "./features/chat/chatSlice";
 import matchingReducer, {
   MatchingState,
-} from "./features/randomChat/matchingSlice";
+} from "./features/matching/matchingSlice";
 import userReducer from "./features/user/userSlice";
 import { UserState } from "@/types/user";
 import { chatWebSocketMiddleware } from "./features/websocket/chatWebsocketMiddleware";

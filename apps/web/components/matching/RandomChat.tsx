@@ -1,37 +1,23 @@
 "use client";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Users } from "lucide-react";
 import { Footer } from "./Footer";
 import { MatchedState } from "./MatchState";
-import {
-  startSearch,
-  matchFound,
-  cancelSearch,
-  resetSearch,
-} from "@/store/features/randomChat/matchingSlice";
 import { RootState } from "@/store/store";
 import { SearchIdle } from "./SearchIdle";
 import { Searching } from "./Searching";
 import { Timeout } from "./Timeout";
 
 export default function RandomChat() {
-  const dispatch = useDispatch();
-  const { searchingStatus, matchedUser, error } = useSelector(
-    (state: RootState) => state.matching,
+  const { searchingStatus, matchedUser } = useSelector(
+    (state: RootState) => state.matching
   );
 
-  const handleStartSearch = () => {
-    dispatch(startSearch());
+  const { user } = useSelector(
+    (state: RootState) => state.user
+  );
+  console.log({ currentUser: user?._id })
 
-    setTimeout(() => {
-      const mockUser = {
-        name: "John Doe",
-        avatar: "https://via.placeholder.com/100",
-        online: true,
-      };
-      dispatch(matchFound(mockUser));
-    }, 3000);
-  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -48,21 +34,18 @@ export default function RandomChat() {
 
         <div className="p-6">
           {searchingStatus === "idle" && (
-            <SearchIdle onStart={handleStartSearch} />
+            <SearchIdle />
           )}
           {searchingStatus === "searching" && (
-            <Searching onCancel={() => dispatch(cancelSearch())} />
+            <Searching />
           )}
           {searchingStatus === "matched" && matchedUser && (
             <MatchedState
-              user={matchedUser}
-              startChat={() => alert("Starting chat")}
-              resetSearch={() => dispatch(resetSearch())}
             />
           )}
-          {searchingStatus === "timeout" && (
-            <Timeout error={error} onRetry={() => dispatch(resetSearch())} />
-          )}
+          {searchingStatus === "timeout" || searchingStatus === "error" ? (
+            <Timeout />
+          ) : null}
         </div>
 
         <Footer searchingStatus={searchingStatus} />

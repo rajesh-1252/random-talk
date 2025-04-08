@@ -12,62 +12,89 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+// Add user to Redis sorted set
 func addUserToQueue(userID string, rating int) {
 	err := db.RedisClient.ZAdd(context.Background(), "matchmaking_queue", &redis.Z{
 		Score:  float64(rating),
 		Member: userID,
 	}).Err()
 	if err != nil {
-		log.Fatalf("Error adding user to the queue: %v", userID)
+		log.Fatalf("Error adding user to queue: %v", userID)
 	}
-
-	fmt.Printf("user %s added with rating %d\n", userID, rating)
+	fmt.Printf("User %s added with rating %d\n", userID, rating)
 }
 
+// Find match for a user
 func FindMatch(userID string, rating int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	addUserToQueue(userID, rating)
+
 	minRating := rating - 2
 	maxRating := rating + 2
+	matchChannel := "match_" + userID // Unique Redis Pub/Sub channel for this user
 
-	// Create a ticker to check for matches every 2 seconds
+	// Subscribe to the match channel for real-time updates
+	pubsub := db.RedisClient.Subscribe(ctx, matchChannel)
+	defer pubsub.Close()
+
+	// Try to match the user
+	go attemptMatch(ctx, userID, minRating, maxRating)
+
+	// Listen for real-time match updates
+	for {
+		select {
+		case <-ctx.Done():
+			db.RedisClient.ZRem(ctx, "matchmaking_queue", userID)
+			return "", fmt.Errorf("matching timeout after 20 seconds")
+
+		case msg := <-pubsub.Channel():
+			// Match found, return the matched user ID
+			fmt.Println("message payload", msg.Payload)
+
+			return msg.Payload, nil
+		}
+	}
+}
+
+// Try to find a match and notify both users
+func attemptMatch(ctx context.Context, userID string, minRating, maxRating int) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		// <-ch we are receiving from the channel
 		case <-ctx.Done():
-			// Remove user from queue if timeout occurs
-			db.RedisClient.ZRem(context.Background(), "matchmaking_queue", userID)
-			return "", fmt.Errorf("matching timeout after 60 seconds")
+			return
 		case <-ticker.C:
+			// Search for a matching user
 			matches, err := db.RedisClient.ZRangeByScore(ctx, "matchmaking_queue", &redis.ZRangeBy{
-				Min:   strconv.Itoa(minRating),
-				Max:   strconv.Itoa(maxRating),
-				Count: 10,
+				Min: strconv.Itoa(minRating),
+				Max: strconv.Itoa(maxRating),
 			}).Result()
 			if err != nil {
 				log.Printf("Error finding matches: %v", err)
 				continue
 			}
 
-			var matchUserID string
 			for _, match := range matches {
 				if match != userID {
-					matchUserID = match
-					break
-				}
-			}
+					// Remove both users from queue
+					db.RedisClient.ZRem(ctx, "matchmaking_queue", userID)
+					db.RedisClient.ZRem(ctx, "matchmaking_queue", match)
 
-			if matchUserID != "" {
-				// Remove both users from the queue
-				db.RedisClient.ZRem(context.Background(), "matchmaking_queue", userID)
-				db.RedisClient.ZRem(context.Background(), "matchmaking_queue", matchUserID)
-				return matchUserID, nil
+					// Notify both users about the match
+					db.RedisClient.Publish(ctx, "match_"+userID, match)
+					db.RedisClient.Publish(ctx, "match_"+match, userID)
+					return
+				}
 			}
 		}
 	}
+}
+
+func RemoveUser(userID string) error {
+	db.RedisClient.ZRem(context.Background(), "matchmaking_queue", userID)
+	return nil
 }

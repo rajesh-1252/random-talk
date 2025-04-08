@@ -19,7 +19,7 @@ export function ChatHeader() {
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
         </div>
         <div className="ml-3">
-          <h1 className="font-medium">{currentUser?.contactName}</h1>
+          <h1 className="font-medium">{currentUser?.contactName} {currentUser?._id}</h1>
           <p className="text-xs text-green-500">online</p>
         </div>
       </div>

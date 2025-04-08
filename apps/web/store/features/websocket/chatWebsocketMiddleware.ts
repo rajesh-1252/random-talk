@@ -71,6 +71,7 @@ export const chatWebSocketMiddleware: Middleware<object, RootState, Dispatch> =
         break;
 
       case "chatWebsocket/send":
+        console.log({ socket })
         if (socket) {
           console.log("Sending message:", action.payload);
           socket.emit("send-message", action.payload);

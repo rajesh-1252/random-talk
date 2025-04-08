@@ -106,7 +106,6 @@ export const webSocketMiddleware: Middleware<object, RootState, Dispatch> =
 
     if (action.type === "websocket/send") {
       const sendAction = action as SendAction;
-      console.log(sendAction.payload);
       if (socket !== null && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(sendAction.payload));
       }

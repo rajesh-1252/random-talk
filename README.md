@@ -51,3 +51,5 @@ For a **WhatsApp-like status service**, users can upload images, videos, and tex
 ✅ **Redis TTL** → Auto-deletes statuses after **24 hours** (no need for manual cleanup).  
 ✅ **Go (Gin) + WebSockets** → Real-time updates with minimal resource usage.  
 ✅ **FFmpeg** → Efficient for **compressing & resizing videos/images** before storage.
+
+    <!-- "dev:java": "mvn -f apps/settings-service/pom.xml spring-boot:run" -->

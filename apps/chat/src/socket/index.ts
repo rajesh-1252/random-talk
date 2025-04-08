@@ -44,7 +44,7 @@ export const setupSocketServer = (server: HttpServer) => {
       console.log("type send-message", data);
       const { senderId, receiverId, message } = data;
       const receiverSocketId = onlineUsers.get(receiverId);
-      console.log(receiverSocketId, receiverId);
+      console.log({ receiverSocketId }, receiverId);
       if (receiverSocketId) {
         io.to(receiverSocketId).emit("receive-message", {
           id: "",
