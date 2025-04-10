@@ -32,6 +32,7 @@ func (ch *ConversationHandler) CreateConversation(c *gin.Context) {
 		return
 	}
 	matchID := c.Query("matchId")
+
 	if matchID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "userTwoID is required"})
 		return

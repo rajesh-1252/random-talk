@@ -1,17 +1,25 @@
-// pages/index.js
 "use client";
+
 import { useState } from "react";
 import { UserSearch, Users, Loader2, MessageSquare, X } from "lucide-react";
 import Image from "next/image";
 
+// Types
+type SearchingStatus = "idle" | "searching" | "matched";
+
+interface MatchedUser {
+  name: string;
+  avatar: string;
+  online: boolean;
+}
+
 export default function Home() {
-  const [searchingStatus, setSearchingStatus] = useState("idle"); // idle, searching, matched
-  const [matchedUser, setMatchedUser] = useState(null);
+  const [searchingStatus, setSearchingStatus] = useState<SearchingStatus>("idle");
+  const [matchedUser, setMatchedUser] = useState<MatchedUser | null>(null);
 
   const startSearch = () => {
     setSearchingStatus("searching");
 
-    // Simulate finding a random user after 2-4 seconds
     const randomTime = Math.floor(Math.random() * 2000) + 2000;
     setTimeout(() => {
       const randomNames = [
@@ -25,8 +33,7 @@ export default function Home() {
         "Riley Johnson",
         "Quinn Miller",
       ];
-      const randomName =
-        randomNames[Math.floor(Math.random() * randomNames.length)];
+      const randomName = randomNames[Math.floor(Math.random() * randomNames.length)] || ''
       setMatchedUser({
         name: randomName,
         avatar: `/api/placeholder/40/40?text=${randomName.charAt(0)}`,
@@ -41,13 +48,12 @@ export default function Home() {
   };
 
   const startChat = () => {
-    // In a real app, this would navigate to a chat page or open a chat interface
-    alert(`Starting chat with ${matchedUser.name}`);
-    // Example: router.push(`/chat/${matchedUser.id}`);
+    console.log('called')
+    // alert(`Starting chat with ${matchedUser?.name}`);
   };
 
   const resetSearch = () => {
-    setMatchingStatus("idle");
+    setSearchingStatus("idle");
     setMatchedUser(null);
   };
 
@@ -60,9 +66,7 @@ export default function Home() {
             <Users className="w-6 h-6" />
             Random Chat
           </h1>
-          <p className="text-center text-indigo-100 mt-2">
-            Connect with someone new
-          </p>
+          <p className="text-center text-indigo-100 mt-2">Connect with someone new</p>
         </div>
 
         {/* Content */}
@@ -72,12 +76,9 @@ export default function Home() {
               <div className="bg-indigo-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
                 <UserSearch className="w-12 h-12 text-indigo-600" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">
-                Find a random chat partner
-              </h2>
+              <h2 className="text-xl font-semibold mb-2">Find a random chat partner</h2>
               <p className="text-gray-600 mb-6">
-                Click the button below to be matched with a random user to start
-                chatting.
+                Click the button below to be matched with a random user to start chatting.
               </p>
               <button
                 onClick={startSearch}
@@ -92,9 +93,7 @@ export default function Home() {
           {searchingStatus === "searching" && (
             <div className="text-center py-8">
               <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mx-auto mb-6" />
-              <h2 className="text-xl font-semibold mb-2">
-                Searching for a match...
-              </h2>
+              <h2 className="text-xl font-semibold mb-2">Searching for a match...</h2>
               <p className="text-gray-600 mb-6">
                 Please wait while we find someone for you to chat with.
               </p>
@@ -116,8 +115,8 @@ export default function Home() {
                     src={matchedUser.avatar}
                     alt={matchedUser.name}
                     className="w-20 h-20 rounded-full border-4 border-indigo-100"
-                    height={30}
-                    width={30}
+                    height={80}
+                    width={80}
                   />
                   <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
@@ -135,7 +134,7 @@ export default function Home() {
                   className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
                 >
                   <MessageSquare className="w-5 h-5" />
-                  Start Chat
+                  Start Chat hello
                 </button>
                 <button
                   onClick={resetSearch}

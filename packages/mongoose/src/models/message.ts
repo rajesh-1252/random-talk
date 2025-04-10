@@ -1,25 +1,35 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export interface IMessage extends Document {
-  sender: mongoose.Types.ObjectId;
-  receiver: mongoose.Types.ObjectId;
-  content?: string;
+export type MessageStatus = "delivered" | "seen" | "sent" | "sending";
+
+export interface IMessage {
+  sender: mongoose.Types.ObjectId | string;
+  receiver: mongoose.Types.ObjectId | string;
+  text?: string;
   video?: string;
   audio?: string;
   file?: string;
-  chatId: mongoose.Types.ObjectId;
+  conversationId: mongoose.Types.ObjectId | string;
+  status: MessageStatus;
+}
+interface MMessage extends IMessage, Document {
   timestamp: Date;
 }
 
-const MessageSchema = new Schema<IMessage>(
+const MessageSchema = new Schema<MMessage>(
   {
     sender: { type: Schema.Types.ObjectId, ref: "User", required: true },
     receiver: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    content: { type: String, trim: true },
+    text: { type: String, trim: true },
     video: { type: String },
     audio: { type: String },
     file: { type: String },
-    chatId: {
+    status: {
+      type: String,
+      enum: ["delivered", "sent", "seen"],
+      default: "sent",
+    },
+    conversationId: {
       type: Schema.Types.ObjectId,
       ref: "Conversation",
       required: true,
@@ -29,4 +39,4 @@ const MessageSchema = new Schema<IMessage>(
   { timestamps: true },
 );
 
-export const MessageModel = mongoose.model<IMessage>("Message", MessageSchema);
+export const MessageModel = mongoose.model<MMessage>("Message", MessageSchema);

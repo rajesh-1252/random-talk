@@ -16,6 +16,7 @@ app.use(auth);
 app.use(express.json());
 app.use(cors());
 app.use("/", AppRouter);
+
 app.use(errorHandlerMiddleware);
 
 connectDB(process.env.MONGO_URI as string)

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IConversation extends Document {
-  participants: mongoose.Types.ObjectId[];
+  participants: string[];
   isGroup: boolean;
   groupName?: string;
   groupAvatar?: string;
@@ -20,6 +20,7 @@ export interface IConversation extends Document {
   contactName: string;
   createdAt: Date;
   updatedAt: Date;
+  pendingMessages: mongoose.Types.ObjectId[] | string[];
 }
 
 const ConversationSchema = new Schema<IConversation>(
@@ -31,10 +32,7 @@ const ConversationSchema = new Schema<IConversation>(
     groupName: { type: String },
     groupAvatar: { type: String },
     lastMessage: {
-      sender: { type: Schema.Types.ObjectId, ref: "User" },
-      text: { type: String },
-      media: { type: String },
-      timestamp: { type: Date },
+      sender: { type: Schema.Types.ObjectId, ref: "Message" },
     },
     unreadCount: { type: Map, of: Number, default: {} },
     isPinned: { type: Map, of: Boolean, default: {} },
@@ -43,6 +41,9 @@ const ConversationSchema = new Schema<IConversation>(
     deletedFor: [{ type: Schema.Types.ObjectId, ref: "User" }],
     typingUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     contactName: { type: String },
+    pendingMessages: [
+      { type: Schema.Types.ObjectId, ref: "Message" }
+    ],
   },
   { timestamps: true },
 );

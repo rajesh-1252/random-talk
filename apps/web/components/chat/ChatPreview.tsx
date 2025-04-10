@@ -1,10 +1,11 @@
 
-import { setCurrentUser, UserConversation } from "@/store/features/chat/chatSlice";
+import { getMessage, setCurrentUser, UserConversation } from "@/store/features/chat/chatSlice";
 import Image from "next/image";
 
-import {User} from "lucide-react";
+import { User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store"; // Adjust import based on your store structure
+import { useAppDispatch } from "@/hooks/useAppDispatch";
 
 const ChatPreview: React.FC<UserConversation> = (props) => {
   const {
@@ -19,7 +20,7 @@ const ChatPreview: React.FC<UserConversation> = (props) => {
     unread,
   } = props;
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const currentUserId = useSelector((state: RootState) => state.user.user?._id);
 
 
@@ -34,6 +35,7 @@ const ChatPreview: React.FC<UserConversation> = (props) => {
     : otherParticipant?.avatar || "/default-avatar.png";
 
   const handleConversation = () => {
+    dispatch(getMessage(_id))
     dispatch(setCurrentUser({ ...props, contactName: chatName || '' }));
   };
 

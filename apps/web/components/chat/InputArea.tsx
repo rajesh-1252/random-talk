@@ -1,49 +1,49 @@
-"use client"
+"use client";
 import { Message, sendMessage } from "@/store/features/chat/chatSlice";
 import { RootState } from "@/store/store";
 import { Paperclip, Smile, Send, Mic } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-
-
 export function InputArea() {
   const [showAttachments, setShowAttachments] = useState(false);
-  const [message, setMessage] = useState('')
-  const dispatch = useDispatch()
-  const { user, loading } = useSelector((state: RootState) => state.user)
-  const currentUser = useSelector((state: RootState) => state.chat.currentUser)
+  const [text, setText] = useState("");
+  const dispatch = useDispatch();
+  const { user, loading } = useSelector((state: RootState) => state.user);
+  const { currentUser } = useSelector((state: RootState) => state.chat);
   if (!currentUser) {
-    console.log('no current user')
-    return
+    console.log("no current user");
+    return;
   }
-  const { participants } = currentUser || {}
-  console.log({ currentUser, participants })
-  const { _id } = user! || {}
-  const receiverId = participants.find((p) => p._id !== _id)?._id || ''
-  console.log({ receiverId })
+  const { participants } = currentUser || {};
+  console.log({ currentUser, participants });
+  const { _id } = user! || {};
+  const receiverId = participants.find((p) => p._id !== _id) || {
+    _id: "",
+    name: "",
+  };
   const toggleAttachments = () => {
     setShowAttachments(!showAttachments);
   };
+
   const handleSendMessage = () => {
     const messagePayload: Message = {
-      id: "",
-      senderId: _id,
-      receiverId,
+      _id: "",
+      sender: _id,
+      receiver: receiverId._id,
+      conversationId: currentUser._id,
       isSeen: false,
-      isDelivered: false,
+      text,
       createdAt: new Date(),
-      message,
-      messageType: 'text',
+      status: "sending",
     };
+    dispatch(sendMessage({ ...messagePayload }));
     dispatch({
-      type: 'chatWebsocket/send',
-      payload: messagePayload
-
-    })
-    dispatch(sendMessage(messagePayload))
-    setMessage('')
-  }
+      type: "chatWebsocket/send",
+      payload: messagePayload,
+    });
+    setText("");
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -51,7 +51,7 @@ export function InputArea() {
       handleSendMessage();
     }
   };
-  if (loading) return <p>loading</p>
+  if (loading) return <p>loading</p>;
 
   return (
     <div className="bg-white border-t border-gray-200 px-4 py-3">
@@ -66,8 +66,8 @@ export function InputArea() {
           <div className="flex items-center px-3 py-2">
             <textarea
               placeholder="Type a message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
               className="bg-transparent flex-1 outline-none resize-none max-h-20 overflow-auto"
               rows={1}
@@ -79,13 +79,18 @@ export function InputArea() {
         </div>
         <button
           onClick={handleSendMessage}
-          disabled={message.trim() === ""}
-          className={`p-2 rounded-full ${message.trim() === ""
-            ? "bg-gray-200 text-gray-400"
-            : "bg-indigo-500 text-white"
-            }`}
+          disabled={text.trim() === ""}
+          className={`p-2 rounded-full ${
+            text.trim() === ""
+              ? "bg-gray-200 text-gray-400"
+              : "bg-indigo-500 text-white"
+          }`}
         >
-          {message.trim() === "" ? <Mic className="w-5 h-5" /> : <Send className="w-5 h-5" />}
+          {text.trim() === "" ? (
+            <Mic className="w-5 h-5" />
+          ) : (
+            <Send className="w-5 h-5" />
+          )}
         </button>
       </div>
     </div>

@@ -16,17 +16,17 @@ type LastMessage struct {
 type Conversation struct {
 	ID           bson.ObjectID   `bson:"_id,omitempty" json:"id,omitempty"`
 	Participants []bson.ObjectID `bson:"participants" json:"participants"`
-	IsGroup      bool            `bson:"isGroup,omitempty" json:"isGroup,omitempty"`
-	GroupName    string          `bson:"groupName,omitempty" json:"groupName,omitempty"`
-	GroupAvatar  string          `bson:"groupAvatar,omitempty" json:"groupAvatar,omitempty"`
-	LastMessage  *LastMessage    `bson:"lastMessage,omitempty" json:"lastMessage,omitempty"`
-	UnreadCount  map[string]int  `bson:"unreadCount,omitempty" json:"unreadCount,omitempty"`
-	IsPinned     map[string]bool `bson:"isPinned,omitempty" json:"isPinned,omitempty"`
-	IsMuted      map[string]bool `bson:"isMuted,omitempty" json:"isMuted,omitempty"`
-	Archived     map[string]bool `bson:"archived,omitempty" json:"archived,omitempty"`
-	DeletedFor   []bson.ObjectID `bson:"deletedFor,omitempty" json:"deletedFor,omitempty"`
-	TypingUsers  []bson.ObjectID `bson:"typingUsers,omitempty" json:"typingUsers,omitempty"`
-	ContactName  string          `bson:"contactName,omitempty" json:"contactName,omitempty"`
+	IsGroup      bool            `bson:"isGroup" json:"isGroup"`
+	GroupName    string          `bson:"groupName" json:"groupName"`
+	GroupAvatar  string          `bson:"groupAvatar" json:"groupAvatar"`
+	LastMessage  *LastMessage    `bson:"lastMessage" json:"lastMessage"`
+	UnreadCount  map[string]int  `bson:"unreadCount" json:"unreadCount"`
+	IsPinned     map[string]bool `bson:"isPinned" json:"isPinned"`
+	IsMuted      map[string]bool `bson:"isMuted" json:"isMuted"`
+	Archived     map[string]bool `bson:"archived" json:"archived"`
+	DeletedFor   []bson.ObjectID `bson:"deletedFor" json:"deletedFor"`
+	TypingUsers  []bson.ObjectID `bson:"typingUsers" json:"typingUsers"`
+	ContactName  string          `bson:"contactName" json:"contactName"`
 	CreatedAt    time.Time       `bson:"createdAt" json:"createdAt"`
 	UpdatedAt    time.Time       `bson:"updatedAt" json:"updatedAt"`
 }

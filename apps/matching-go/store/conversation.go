@@ -37,13 +37,17 @@ func (h *MongoConversationStore) InsertConversation(ctx context.Context, userOne
 		fmt.Printf("invalid userTwoID: %v", err)
 	}
 
+	fmt.Println("user 1 id ", userOneObjID, "user 2 id", userTwoObjID)
+
 	// Check if conversation already exists
 	filter := bson.M{
 		"participants": bson.M{"$all": []bson.ObjectID{userOneObjID, userTwoObjID}},
 		"isGroup":      false,
 	}
 	var existing types.Conversation
+
 	err = h.coll.FindOne(ctx, filter).Decode(&existing)
+	fmt.Println(existing, "existing", err)
 	if err == nil {
 		fmt.Println("Conversation already exists:", existing.ID)
 		return nil, err

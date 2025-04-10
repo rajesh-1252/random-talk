@@ -15,21 +15,18 @@ type User = {
 };
 
 export const MatchedState = () => {
-  const { matchedUser } = useSelector(
-    (state: RootState) => state.matching
-  );
-  console.log({ matchedUser })
-  const user = matchedUser || { id: 'id' }
-  const dispatch = useAppDispatch()
-  const router = useRouter()
+  const { matchedUser } = useSelector((state: RootState) => state.matching);
+  console.log({ matchedUser });
+  const user = matchedUser || { _id: "id" };
+  const dispatch = useAppDispatch();
+  const router = useRouter();
   const handleStartChat = () => {
-    console.log('handleStartChat  clicked', user.id)
-
-    dispatch(startChat(user?.id))
-    // router.push('/chat')
-
-
-  }
+    console.log("handleStartChat  clicked", user);
+    if (user._id) {
+      dispatch(startChat(user._id));
+    }
+    router.push("/chat");
+  };
   return (
     <div className="text-center">
       <div className="flex items-center justify-center mb-6">
@@ -39,7 +36,8 @@ export const MatchedState = () => {
             alt={user.name}
             className="w-20 h-20 rounded-full border-4 border-indigo-100"
             height={40}
-            width={40} />
+            width={40}
+          />
           <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
         </div>
       </div>

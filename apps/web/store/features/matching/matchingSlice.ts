@@ -2,7 +2,7 @@ import axiosInstance from "@/api/axiosInstance";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 type User = {
-  id: string;
+  _id: string;
   name: string;
   avatar: string;
   online: boolean;

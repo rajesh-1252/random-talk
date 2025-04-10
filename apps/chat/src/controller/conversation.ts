@@ -1,7 +1,9 @@
 import { BadRequestError } from "@repo/errors";
-import { ConversationModel } from "@repo/mongoose";
+import { ConversationModel, MessageModel } from "@repo/mongoose";
 import { Request, Response } from "express";
 import { apiResponse } from "@repo/helper";
+import { MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER } from "@repo/websocketaction";
+import { Socket } from "socket.io";
 
 export const createConversation = async (req: Request, res: Response) => {
   const userId = req.userDetails._id;
@@ -97,4 +99,71 @@ export const getUserConversations = async (req: Request, res: Response) => {
       totalPages: Math.ceil(total / limit),
     },
   });
+};
+
+
+
+export const pushToPendingMessage = async ({
+  conversationId,
+  messageId,
+}: {
+  conversationId: string;
+  messageId: string;
+}) => {
+  try {
+    await ConversationModel.updateOne(
+      { _id: conversationId },
+      { $push: { pendingMessages: messageId } }
+    );
+  } catch (error) {
+    console.log(error)
+  }
+};
+
+
+export const batchUpdateStatus = async ({
+  conversationId,
+  seenById,
+  status,
+  socket,
+}: {
+  conversationId: string;
+  seenById: string,
+  status: "delivered" | "seen";
+  socket: Socket
+}) => {
+  try {
+    const conversation = await ConversationModel.findById(conversationId);
+
+    if (!conversation || !conversation.pendingMessages.length) return;
+
+    const messageIds = conversation.pendingMessages;
+
+    const message = await MessageModel.findOne({ _id: messageIds[0] })
+    console.log({ messageId: message?.receiver.toString(), seenById })
+    if (message?.receiver.toString() !== seenById) {
+      console.log('not seen by receiver')
+      return
+    }
+
+    socket.emit(MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER)
+    console.log("seen by receiver")
+    // 1. Update all messages' status in bulk
+    await MessageModel.updateMany(
+      { _id: { $in: messageIds }, receiver: seenById },
+      { $set: { status } }
+    );
+
+
+
+    // 2. If status === seen, pull all those messages from pendingMessages array
+    if (status === "seen") {
+      await ConversationModel.updateOne(
+        { _id: conversationId },
+        { $set: { pendingMessages: [] } }
+      );
+    }
+  } catch (error) {
+    console.error("batchUpdateStatus error:", error);
+  }
 };
