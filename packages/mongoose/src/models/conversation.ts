@@ -1,16 +1,18 @@
-import mongoose, { Schema, Document } from "mongoose";
+import { IUser } from "@repo/shared-types";
+import mongoose, { Schema, Document, Mongoose } from "mongoose";
 
-export interface IConversation extends Document {
-  participants: string[];
+export interface IConversation {
+  participants: IUser[];
   isGroup: boolean;
   groupName?: string;
   groupAvatar?: string;
-  lastMessage?: {
-    sender: mongoose.Types.ObjectId;
-    text?: string;
-    media?: string;
-    timestamp: Date;
-  };
+  // lastMessage?: {
+  //   sender: mongoose.Types.ObjectId;
+  //   text?: string;
+  //   media?: string;
+  //   timestamp: Date;
+  // };
+  lastMessage: mongoose.Types.ObjectId;
   unreadCount: Map<string, number>;
   isPinned: Map<string, boolean>;
   isMuted: Map<string, boolean>;
@@ -23,7 +25,9 @@ export interface IConversation extends Document {
   pendingMessages: mongoose.Types.ObjectId[] | string[];
 }
 
-const ConversationSchema = new Schema<IConversation>(
+interface MConversation extends IConversation, Document {}
+
+const ConversationSchema = new Schema<MConversation>(
   {
     participants: [
       { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -31,9 +35,7 @@ const ConversationSchema = new Schema<IConversation>(
     isGroup: { type: Boolean, default: false },
     groupName: { type: String },
     groupAvatar: { type: String },
-    lastMessage: {
-      sender: { type: Schema.Types.ObjectId, ref: "Message" },
-    },
+    lastMessage: { type: Schema.Types.ObjectId, ref: "Message" },
     unreadCount: { type: Map, of: Number, default: {} },
     isPinned: { type: Map, of: Boolean, default: {} },
     isMuted: { type: Map, of: Boolean, default: {} },
@@ -41,14 +43,12 @@ const ConversationSchema = new Schema<IConversation>(
     deletedFor: [{ type: Schema.Types.ObjectId, ref: "User" }],
     typingUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     contactName: { type: String },
-    pendingMessages: [
-      { type: Schema.Types.ObjectId, ref: "Message" }
-    ],
+    pendingMessages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
   },
   { timestamps: true },
 );
 
-export const ConversationModel = mongoose.model<IConversation>(
+export const ConversationModel = mongoose.model<MConversation>(
   "Conversation",
   ConversationSchema,
 );

@@ -12,9 +12,8 @@ const messageRouter: Router = Router();
 // Apply authentication middleware to all routes
 // messageRouter.use(authenticate);
 
-messageRouter.get("/:conversationId", getMessage);
+messageRouter.get("/:conversationId/:senderId", getMessage);
 
-messageRouter.post("/", createMessage);
 
 messageRouter.put("/:messageId", updateMessage);
 

@@ -2,8 +2,7 @@ import { BadRequestError } from "@repo/errors";
 import { ConversationModel, MessageModel } from "@repo/mongoose";
 import { Request, Response } from "express";
 import { apiResponse } from "@repo/helper";
-import { MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER } from "@repo/websocketaction";
-import { Socket } from "socket.io";
+import redisClient from "../redis";
 
 export const createConversation = async (req: Request, res: Response) => {
   const userId = req.userDetails._id;
@@ -81,6 +80,7 @@ export const getUserConversations = async (req: Request, res: Response) => {
 
   const conversations = await ConversationModel.find({ participants: userId })
     .populate("participants", "_id name avatar")
+    .populate('lastMessage', 'text')
     .sort({ updatedAt: -1 })
     .skip(skip)
     .limit(limit)
@@ -101,8 +101,6 @@ export const getUserConversations = async (req: Request, res: Response) => {
   });
 };
 
-
-
 export const pushToPendingMessage = async ({
   conversationId,
   messageId,
@@ -113,24 +111,23 @@ export const pushToPendingMessage = async ({
   try {
     await ConversationModel.updateOne(
       { _id: conversationId },
-      { $push: { pendingMessages: messageId } }
+      { $push: { pendingMessages: messageId } },
     );
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
 };
-
 
 export const batchUpdateStatus = async ({
   conversationId,
   seenById,
   status,
-  socket,
+  // socket,
 }: {
   conversationId: string;
-  seenById: string,
+  seenById: string;
   status: "delivered" | "seen";
-  socket: Socket
+  // socket: Socket;
 }) => {
   try {
     const conversation = await ConversationModel.findById(conversationId);
@@ -139,31 +136,39 @@ export const batchUpdateStatus = async ({
 
     const messageIds = conversation.pendingMessages;
 
-    const message = await MessageModel.findOne({ _id: messageIds[0] })
-    console.log({ messageId: message?.receiver.toString(), seenById })
+    const message = await MessageModel.findOne({ _id: messageIds[0] });
+    console.log({ messageId: message?.receiver.toString(), seenById });
     if (message?.receiver.toString() !== seenById) {
-      console.log('not seen by receiver')
-      return
+      console.log("not seen by receiver");
+      return;
     }
 
-    socket.emit(MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER)
-    console.log("seen by receiver")
+    // socket.emit(MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER)
+    console.log("seen by receiver");
     // 1. Update all messages' status in bulk
     await MessageModel.updateMany(
       { _id: { $in: messageIds }, receiver: seenById },
-      { $set: { status } }
+      { $set: { status } },
     );
-
-
 
     // 2. If status === seen, pull all those messages from pendingMessages array
     if (status === "seen") {
       await ConversationModel.updateOne(
         { _id: conversationId },
-        { $set: { pendingMessages: [] } }
+        { $set: { pendingMessages: [] } },
       );
     }
   } catch (error) {
     console.error("batchUpdateStatus error:", error);
   }
 };
+
+
+export const isOnline = async (req: Request, res: Response) => {
+  const userId = req.params.userId
+  const isOnline = await redisClient.exists(`online:${userId}`)
+  console.log({ isOnline })
+  apiResponse(res, {
+    isOnline: isOnline === 1
+  })
+}

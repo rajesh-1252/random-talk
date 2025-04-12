@@ -2,44 +2,35 @@ import axiosInstance from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/apiResponse";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { IMessage, MessageStatus } from "@repo/mongoose";
+import { IMessage } from "@repo/mongoose";
+import { IConversationWithId } from "../chatPreview/chatPreviewSlice";
 const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL;
-export interface UserConversation {
-  _id: string;
-  participants: { _id: string; name: string }[];
-  isGroup: boolean;
-  groupName?: string;
-  groupAvatar?: string;
-  lastMessage?: string;
-  updatedAt: string;
-  contactName: string;
-  unread: number;
-}
+
+export interface UserConversation extends IConversationWithId { }
 
 export interface Message extends IMessage {
   _id: string;
-  isSeen: boolean;
   createdAt: Date;
-  // messageType: "text" | "image" | "video" | "audio" | "file";
 }
 
 export interface ChatState {
   currentUser: UserConversation | null;
   users: UserConversation[];
   messages: Message[];
+  isOnline: boolean
 }
 
 const initialState: ChatState = {
   currentUser: null,
   users: [],
   messages: [],
+  isOnline: false
 };
 
 export const startChat = createAsyncThunk<
   ApiResponse<UserConversation>,
   string
 >("matching/startChat", async (matchId, { rejectWithValue }) => {
-  console.log("matching/startCha clicked t", matchId);
   try {
     const response = await axiosInstance.get<ApiResponse<UserConversation>>(
       `${API_URL}/matching/api/conversation/?matchId=${matchId}`,
@@ -54,12 +45,21 @@ export const startChat = createAsyncThunk<
   }
 });
 
-export const getMessage = createAsyncThunk<ApiResponse<Message[]>, string>(
+
+type ChatResponse = {
+  messages: Message[]
+  isOnline: boolean
+}
+interface GetMessageArgs {
+  conversationId: string;
+  senderId: string;
+}
+export const getMessage = createAsyncThunk<ApiResponse<ChatResponse>, GetMessageArgs>(
   "matching/getMessage",
-  async (conversationId, { rejectWithValue }) => {
+  async ({ conversationId, senderId }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get<ApiResponse<Message[]>>(
-        `${API_URL}/chat/message/${conversationId}`,
+      const response = await axiosInstance.get<ApiResponse<ChatResponse>>(
+        `${API_URL}/chat/message/${conversationId}/${senderId}`,
       );
       console.log("chat respnse", response.data);
       return response.data;
@@ -115,39 +115,34 @@ const chatSlice = createSlice({
       } else {
         // sendNotifcation
       }
+      // update lastmessage in chat preview
     },
 
-    updateMessageStatus: (
-      state,
-      action: PayloadAction<{ messageId: string; status: MessageStatus }>,
-    ) => {
-      const { messageId, status } = action.payload;
-      state.messages = state.messages.map((m) => {
-        if (m._id === "" && status === "sent") {
-          return {
-            ...m,
-            _id: messageId,
-            status: status,
-          };
-        } else if (m._id === messageId) {
-          return {
-            ...m,
-            status: status,
-          };
-        }
-        return m;
-      });
+    updateMessageStatus: (state, action: PayloadAction<string>) => {
+      const messageId = action.payload;
+      const lastIndex = state.messages.length - 1;
+      const lastMessage = state.messages[lastIndex];
+
+      if (lastMessage) {
+        lastMessage._id = messageId;
+        lastMessage.status = "sent";
+      }
     },
+
     markMessageAsSeen: (state) => {
-      console.log("markMessageAsSeen")
+      console.log("mark as seen called");
       state.messages = state.messages.map((item) => {
-        return { ...item, status: 'seen' }
-      })
+        return { ...item, status: "seen" };
+      });
     },
 
     markMessageAsDelivered: (state, action: PayloadAction<string>) => {
       const message = state.messages.find((msg) => msg._id === action.payload);
-      console.log({ message: JSON.stringify(message), fds: action.payload });
+      console.log({
+        message: JSON.stringify(message),
+        messageId: action.payload,
+        fullMessage: JSON.stringify(state.messages),
+      });
       if (message) message.status = "delivered";
     },
   },
@@ -161,8 +156,9 @@ const chatSlice = createSlice({
       )
       .addCase(
         getMessage.fulfilled,
-        (state, action: PayloadAction<ApiResponse<Message[]>>) => {
-          state.messages = action.payload.result;
+        (state, action: PayloadAction<ApiResponse<ChatResponse>>) => {
+          state.messages = action.payload.result.messages;
+          state.isOnline = action.payload.result.isOnline;
         },
       );
   },

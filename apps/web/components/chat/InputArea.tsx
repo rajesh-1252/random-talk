@@ -1,5 +1,6 @@
 "use client";
 import { Message, sendMessage } from "@/store/features/chat/chatSlice";
+import { updateConverstaion } from "@/store/features/chatPreview/chatPreviewSlice";
 import { RootState } from "@/store/store";
 import { Paperclip, Smile, Send, Mic } from "lucide-react";
 import { useState } from "react";
@@ -27,12 +28,12 @@ export function InputArea() {
   };
 
   const handleSendMessage = () => {
+    if (text.trim() === "") return;
     const messagePayload: Message = {
       _id: "",
       sender: _id,
       receiver: receiverId._id,
       conversationId: currentUser._id,
-      isSeen: false,
       text,
       createdAt: new Date(),
       status: "sending",
@@ -42,6 +43,12 @@ export function InputArea() {
       type: "chatWebsocket/send",
       payload: messagePayload,
     });
+    dispatch(
+      updateConverstaion({
+        _id: currentUser._id,
+        lastMessage: { _id: "", text },
+      }),
+    );
     setText("");
   };
 

@@ -3,9 +3,14 @@ import { apiResponse } from "@repo/helper";
 import { MessageModel, ConversationModel } from "@repo/mongoose";
 import { Request, Response } from "express";
 import { pushToPendingMessage } from "./conversation";
+import mongoose from "mongoose";
+import redisClient from "../redis";
 
 export const getMessage = async (req: Request, res: Response) => {
   const conversationId = req.params.conversationId;
+  const senderId = req.params.senderId
+  console.log({ senderId, params: req.params, conversationId })
+
 
   if (!conversationId) {
     throw new BadRequestError("Chat ID is required");
@@ -16,8 +21,14 @@ export const getMessage = async (req: Request, res: Response) => {
   }).sort({ timestamp: 1 });
   // .populate("sender", "name avatar")
   // .populate("receiver", "name avatar");
+  //
 
-  apiResponse(res, messages);
+  // get online of the userr
+  const userId = req.userDetails._id
+  const isOnline = await redisClient.exists(`online:${senderId}`)
+  console.log({ isOnline, userId })
+
+  apiResponse(res, { messages, isOnline: isOnline === 1 });
 };
 
 export const createMessage = async (params: any) => {
@@ -43,7 +54,7 @@ export const createMessage = async (params: any) => {
   //   );
   // }
   // Verify if conversation exists and user is a participant
-  const conversation = await ConversationModel.findById(conversationId);
+  let conversation = await ConversationModel.findById(conversationId);
   if (!conversation) {
     throw new BadRequestError("Conversation not found");
   }
@@ -63,9 +74,16 @@ export const createMessage = async (params: any) => {
     file,
     conversationId,
   });
+
+
   if (!message) {
     throw new BadRequestError("Error creating messsage");
   }
+  await ConversationModel.findByIdAndUpdate(
+    conversationId,
+    { lastMessage: message._id },
+    { new: true }
+  );
   await pushToPendingMessage({ conversationId, messageId: message._id as string })
   const populatedMessage = await MessageModel.findById(message._id)
     .populate("sender", "name avatar")

@@ -1,28 +1,17 @@
 import MessageItem from "./MessageItem";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { useEffect } from "react";
 
 interface MessagesAreaProps {
   isTyping: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 export function MessagesArea({ isTyping, messagesEndRef }: MessagesAreaProps) {
-  const { messages, currentUser } = useSelector(
+  const { messages, } = useSelector(
     (state: RootState) => state.chat,
   );
-  const dispatch = useAppDispatch()
-  const { user } = useSelector((state: RootState) => state.user);
-  const currentUserId = user?._id
 
 
-  useEffect(() => {
-    dispatch({
-      type: "chatWebsocket/markAsSeen",
-      payload: { conversationId: currentUser?._id, seenById: user?._id }
-    });
-  }, [messages.length])
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3 bg-gray-100">

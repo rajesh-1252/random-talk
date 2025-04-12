@@ -9,43 +9,14 @@ import {
 } from "../chat/chatSlice";
 import { chatWsMessageReceived } from "./chatWebsocket";
 import {
-  MESSAGE_RECEIVED_BY_RECEIVER_SEND_ACK_TO_SERVER,
-  MESSAGE_RECEIVED_BY_RECEIVER_SEND_TO_SENDER,
-  MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER,
-  MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SERVER,
-  SEND_TO_RECEIVER,
-  SEND_TO_SENDER,
   SEND_MESSAGE,
+  RECEIVED_MESSAGE,
+  BULK_UPDATE_STATUS,
 } from "@repo/websocketaction";
 
-interface ConnectAction {
-  type: "chatWebsocket/connect";
-  payload: {
-    url: string;
-  };
-}
-
-interface DisconnectAction {
-  type: "chatWebsocket/disconnect";
-}
-
-interface SendAction {
-  type: "chatWebsocket/send";
-  payload: any;
-}
-
-interface ReceiveAction {
-  type: "chatWebsocket/receive";
-  payload: any;
-}
-
-type WebsocketActionTypes =
-  | ConnectAction
-  | DisconnectAction
-  | SendAction
-  | ReceiveAction;
 
 let socket: Socket | null = null;
+let pingInterval: NodeJS.Timeout | null = null;
 
 export const chatWebSocketMiddleware: Middleware<object, RootState, Dispatch> =
   (api) => (next) => async (action: any) => {
@@ -53,6 +24,7 @@ export const chatWebSocketMiddleware: Middleware<object, RootState, Dispatch> =
 
     switch (action.type) {
       case "chatWebsocket/connect":
+
         if (socket) socket.disconnect();
         const token = localStorage.getItem("token");
         if (!token) {
@@ -68,40 +40,53 @@ export const chatWebSocketMiddleware: Middleware<object, RootState, Dispatch> =
 
         socket.on("connect", () => {
           console.log("Connected to WebSocket server");
+          if (!pingInterval) {
+            pingInterval = setInterval(() => {
+              socket?.emit('ping');
+            }, 270_000); // 4.5 mins
+          }
         });
 
-        socket.on(SEND_TO_RECEIVER, (message, ackCallBack) => {
+        // this is receiver side
+        socket.on(SEND_MESSAGE, (message, ackCallBack) => {
+          console.log("SEND_MESSAGE", message);
           console.log("📩 Received message:", message);
           if (!store.getState().chat.currentUser) {
-            console.warn("❗ currentUser not found, skipping message");
-            return ackCallBack({ status: "skipped" }); // ✅ prevent timeout
+            return ackCallBack({
+              success: true,
+              status: "delivered",
+              messageId: message._id,
+            });
           }
           const state = store.getState();
           const userId = state.user.user?._id;
-
-          socket?.emit(MESSAGE_RECEIVED_BY_RECEIVER_SEND_ACK_TO_SERVER, {
-            senderId: message.sender,
-            messageId: message._id,
-          });
           dispatch(sendMessage({ ...message, userId }));
-          ackCallBack({ status: "ok" });
+          ackCallBack({ success: true, status: "seen" });
         });
 
-        socket.on(MESSAGE_RECEIVED_BY_RECEIVER_SEND_TO_SENDER, (messageId) => {
-          console.log("do double tick", messageId);
-          // dispatch(markMessageAsDelivered(messageId));
-          dispatch(updateMessageStatus({ messageId, status: "delivered" }));
+        // this is  sender side
+        socket.on(RECEIVED_MESSAGE, (data) => {
+          console.log("RECEIVED_MESSAGE", data);
+          if (data.success) {
+            if (data.status === "seen") {
+              setTimeout(() => {
+                dispatch(markMessageAsSeen());
+              }, 100)
+            }
+            if (data.status === "delivered") {
+              setTimeout(() => {
+                dispatch(markMessageAsDelivered(data.messageId));
+              }, 100)
+            }
+          }
         });
-        socket.on(MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER, (messageId) => {
-          console.log("MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SENDER");
-          dispatch(markMessageAsSeen());
-        });
-        socket.on(SEND_TO_SENDER, (message) => {
-          console.log("SEND_TO_SENDER", message);
-          dispatch(
-            updateMessageStatus({ messageId: message._id, status: "sent" }),
-          );
-        });
+
+        socket.on(BULK_UPDATE_STATUS, (data) => {
+          console.log("BULK_UPDATE_STATUS")
+          setTimeout(() => {
+            dispatch(markMessageAsSeen());
+          }, 100)
+        })
 
         socket.on("match_found", (matchEvent) => {
           console.log("Received match event:");
@@ -121,14 +106,22 @@ export const chatWebSocketMiddleware: Middleware<object, RootState, Dispatch> =
       case "chatWebsocket/send":
         if (socket) {
           console.log("Sending message:", action.payload);
-          // response  = {success : true}
-          const response = await socket.emitWithAck(
-            SEND_MESSAGE,
-            action.payload,
-          );
+          const response: { success: boolean; messageId: string } =
+            await socket.emitWithAck(SEND_MESSAGE, action.payload);
           if (response.success) {
+            console.log("response", "single tick", response.messageId);
+            dispatch(updateMessageStatus(response.messageId));
             // single tick
+            // and update the message id
           }
+        }
+        break;
+
+      case "chatWebsocket/markAsSeen":
+        if (!socket) return;
+        const response = await socket.emitWithAck(BULK_UPDATE_STATUS, action.payload)
+        console.log({ response, }, 'BULK_UPDATE_STATUS')
+        if (response.true) {
         }
         break;
 
@@ -136,14 +129,14 @@ export const chatWebSocketMiddleware: Middleware<object, RootState, Dispatch> =
         if (socket) {
           socket.disconnect();
           socket = null;
+          if (pingInterval) {
+            clearInterval(pingInterval);
+            pingInterval = null;
+          }
           console.log("WebSocket disconnected");
         }
         break;
 
-      case "chatWebsocket/markAsSeen":
-        if (!socket) return;
-        socket.emit(MESSAGE_SEEN_BY_RECEIVER_SEND_TO_SERVER, action.payload);
-        break;
 
       default:
         break;

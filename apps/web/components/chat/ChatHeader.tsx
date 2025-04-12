@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 export function ChatHeader() {
   const dispatch = useDispatch();
-  const { currentUser } = useSelector((state: RootState) => state.chat);
+  const { currentUser, isOnline } = useSelector((state: RootState) => state.chat);
   return (
     <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center">
       <button className="p-1 rounded-full hover:bg-gray-100 mr-3">
@@ -16,11 +16,19 @@ export function ChatHeader() {
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
             <User className="w-6 h-6 text-indigo-600" />
           </div>
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+          {isOnline ?
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            :
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-gray-500 rounded-full border-2 border-white"></div>
+          }
         </div>
         <div className="ml-3">
           <h1 className="font-medium">{currentUser?.contactName} </h1>
-          <p className="text-xs text-green-500">online</p>
+          {isOnline ?
+            <p className="text-xs text-green-500">online</p>
+            :
+            <p className="text-xs text-gray-500">offline</p>
+          }
         </div>
       </div>
       <div className="flex items-center space-x-3">
